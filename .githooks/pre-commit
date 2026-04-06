@@ -1,0 +1,48 @@
+#!/bin/bash
+# Pre-commit hook: prevent files/dirs from being created at the repo root
+# outside the approved list. This keeps the repo structure clean.
+
+ALLOWED_ROOT_FILES="CLAUDE.md|README.md|QUICKSTART.md|CUSTOMIZE.md|CHANGELOG.md|\.cursorrules|\.gitignore|\.DS_Store"
+ALLOWED_ROOT_DIRS="\.claude|\.cursorrules|\.github|\.githooks|config|customer-intelligence|data-science|design|engineering|meetings|product|projects|reference-docs|roadmap|strategy|team|docs"
+
+errors=""
+
+# Check for new files at the repo root
+for file in $(git diff --cached --name-only --diff-filter=A); do
+    # Skip files in subdirectories
+    if [[ "$file" == *"/"* ]]; then
+        continue
+    fi
+    # Check against allowed list
+    if ! echo "$file" | grep -qE "^($ALLOWED_ROOT_FILES)$"; then
+        errors="${errors}  - ${file}\n"
+    fi
+done
+
+# Check for new directories at the repo root
+for file in $(git diff --cached --name-only --diff-filter=A); do
+    dir=$(echo "$file" | cut -d'/' -f1)
+    if ! echo "$dir" | grep -qE "^($ALLOWED_ROOT_DIRS)$"; then
+        if [[ "$file" == *"/"* ]]; then
+            errors="${errors}  - ${dir}/ (new root directory)\n"
+        fi
+    fi
+done
+
+if [ -n "$errors" ]; then
+    echo "ERROR: New files/directories at the repo root are not allowed."
+    echo ""
+    echo "Blocked:"
+    echo -e "$errors"
+    echo ""
+    echo "Route your content to the correct folder:"
+    echo "  product/     — Product overview, strategy, terminology"
+    echo "  projects/    — Project-specific artifacts"
+    echo "  engineering/ — Eng reference docs"
+    echo "  data-science/— DS analyses"
+    echo "  strategy/    — Beliefs, competitive intel, open questions"
+    echo "  customer-intelligence/ — Feedback scans, deep dives"
+    echo ""
+    echo "See .cursorrules for the full routing table."
+    exit 1
+fi

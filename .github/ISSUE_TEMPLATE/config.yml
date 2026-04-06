@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Help with your team's fork
+    url: https://github.com/akshatk7/ai-product-development-os/blob/main/QUICKSTART.md
+    about: "Having trouble setting up? Check the quickstart guide. For issues with your own fork, manage them in your fork's repo."

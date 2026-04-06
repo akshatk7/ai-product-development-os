@@ -1,0 +1,42 @@
+# Repo Rules for AI Contributors
+
+This repo is a documentation and context repo — NOT source code. Follow these rules when adding or editing content.
+
+## File Placement
+
+**Never create files at the repo root.** All content goes in the appropriate folder:
+
+| Content Type | Target Folder |
+|---|---|
+| Product strategy, overview, terminology | `product/` |
+| Team info, meetings, channels | `team/` |
+| Roadmap, goals, projections | `roadmap/` |
+| Project-specific artifacts | `projects/{project-name}/` |
+| Data science analyses | `data-science/` |
+| Engineering reference docs | `engineering/` |
+| Design reference docs | `design/` |
+| Customer feedback and intelligence | `customer-intelligence/` |
+| Strategic hypotheses and questions | `strategy/` |
+| Reference materials (PDFs, etc.) | `reference-docs/` |
+
+## File Routing Within Projects
+
+Each project file has a specific purpose. Don't dump everything into CONTEXT.md:
+
+| Content | Goes In |
+|---|---|
+| Narrative context (what, why, current state) | `CONTEXT.md` |
+| Chronological updates and meeting notes | `updates.md` |
+| Finalized decisions with rationale | `decisions.md` |
+| UI/UX flows and design specs | `designs.md` |
+| Data/system findings | `truths.md` |
+| Technical design | `rfc-frontend.md` / `rfc-backend.md` |
+| Exploratory work | `scratchpad.md` |
+
+## Strategy Layer
+
+Before making significant product decisions, check `strategy/beliefs.md` for relevant hypotheses. If your work confirms, challenges, or invalidates a belief, update it with new evidence. Beliefs are never deleted — when wrong, they're struck through with a dated note.
+
+## Creating New Files
+
+**Files are created organically.** Do not pre-create empty files or folder structures. Only create a file when there's content to put in it.

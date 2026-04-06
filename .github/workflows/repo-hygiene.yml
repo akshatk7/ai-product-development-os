@@ -1,0 +1,41 @@
+name: Repo Hygiene Check
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  check-root-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for unauthorized root files
+        run: |
+          ALLOWED_DIRS="\.claude|\.cursorrules|\.github|\.githooks|config|customer-intelligence|data-science|design|docs|engineering|meetings|product|projects|reference-docs|roadmap|strategy|team"
+          ALLOWED_FILES="CLAUDE\.md|README\.md|QUICKSTART\.md|CUSTOMIZE\.md|CHANGELOG\.md|\.cursorrules|\.gitignore|\.DS_Store"
+
+          warnings=""
+
+          for item in *; do
+            if [ -d "$item" ]; then
+              if ! echo "$item" | grep -qE "^($ALLOWED_DIRS)$"; then
+                warnings="${warnings}  - ${item}/ (unexpected root directory)\n"
+              fi
+            elif [ -f "$item" ]; then
+              if ! echo "$item" | grep -qE "^($ALLOWED_FILES)$"; then
+                warnings="${warnings}  - ${item} (unexpected root file)\n"
+              fi
+            fi
+          done
+
+          if [ -n "$warnings" ]; then
+            echo "::warning::Unexpected files/directories at repo root:"
+            echo -e "$warnings"
+            echo ""
+            echo "See .cursorrules for the routing table."
+          else
+            echo "Root structure is clean."
+          fi
