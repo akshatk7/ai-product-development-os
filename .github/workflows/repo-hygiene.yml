@@ -32,10 +32,11 @@ jobs:
           done
 
           if [ -n "$warnings" ]; then
-            echo "::warning::Unexpected files/directories at repo root:"
+            echo "::error::Unexpected files/directories at repo root:"
             echo -e "$warnings"
             echo ""
             echo "See .cursorrules for the routing table."
+            exit 1
           else
             echo "Root structure is clean."
           fi

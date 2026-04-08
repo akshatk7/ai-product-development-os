@@ -13,4 +13,4 @@ Pull requests and direct commits to this repo will not be accepted (except from 
 
 ## Questions or Feedback?
 
-If you have ideas for improving the template itself (not your team's instance), [open an issue](https://github.com/akshatk7/ai-product-development-os/issues). Issues are welcome for template feedback, PRs are not.
+If you have ideas for improving the template itself (not your team's instance), [open an issue](https://github.com/akshatk7/ai-product-development-os/issues). Issues are welcome for template feedback — PRs are not.

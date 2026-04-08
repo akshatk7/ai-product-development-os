@@ -1,15 +1,25 @@
 # AI Product Development OS
 
-A plug-and-play operating system for product development teams. Fork this repo, fill in your team's context, and start shipping faster.
+A plug-and-play operating system for product development teams. Clone this repo, fill in your team's context, and start shipping faster.
 
 ---
 
-> **This is a template repo — fork it, don't contribute to it.**
+> **This is a template repo — clone it, don't contribute to it.**
 >
-> 1. Click **"Fork"** (top right on GitHub) to copy this repo to your own space
-> 2. Rename it to match your team (e.g., `my-team-product-os`)
-> 3. Follow `QUICKSTART.md` to set it up
-> 4. All your changes go in **your fork** — not here
+> ```bash
+> git clone https://github.com/akshatk7/ai-product-development-os.git my-team-knowledge-base
+> cd my-team-knowledge-base
+> rm -rf .git && git init
+> ```
+>
+> Then create your own repo on GitHub and push:
+> ```bash
+> git remote add origin https://github.com/your-org/<your-team-repo>.git
+> git add -A && git commit -m "Initialize from AI Product Development OS template"
+> git push -u origin main
+> ```
+>
+> All your changes go in **your repo** — not here.
 >
 > Questions or feedback? [Open an issue](https://github.com/akshatk7/ai-product-development-os/issues).
 
@@ -138,12 +148,12 @@ Every new piece of information gets **checked against everything else** and upda
 
 ## How to Start
 
-1. **Fork** this repo to your own team's GitHub space
-2. **Rename** your fork to something meaningful
+1. **Clone** this repo (see instructions at the top)
+2. **Create your own repo** on GitHub and push
 3. **Follow** `QUICKSTART.md` for step-by-step setup
 4. **Customize** using `CUSTOMIZE.md` to adapt to your tools and workflow
 
-All changes happen in your fork. This upstream repo is the starting template — your fork becomes **your team's knowledge base** and will diverge from here. That's expected and encouraged.
+Your clone becomes **your team's knowledge base** and will diverge from here. That's expected and encouraged.
 
 See `CLAUDE.md` for the full system overview once you're set up.
 
@@ -174,10 +184,10 @@ See `CLAUDE.md` for the full system overview once you're set up.
 
 ---
 
-**If you're using this, [star the repo](https://github.com/akshatk7/ai-product-development-os)** — it helps track adoption and prioritize improvements.
+**If you're using this, [star the repo](https://github.com/akshatk7/ai-product-development-os)** — it helps us track adoption and prioritize improvements.
 
 ---
 
 ## Credits
 
-Created and maintained by **[Akshat Khandelwal](https://github.com/akshatk7)**.
+Created and maintained by **[Akshat Khandelwal](https://github.com/akshatk7)** .

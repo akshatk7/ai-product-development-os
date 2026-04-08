@@ -57,16 +57,18 @@ Each question follows this schema:
 
 ---
 
-## Integration — Proactive, Not Passive
+## When to Consult This Layer
 
-The strategy layer must be read and updated in every workflow, not just when asked.
+**Pull context as needed — don't front-load everything.** Read the beliefs, competitive observations, and open questions that are relevant to the specific task at hand.
 
-**Every session:** Read `strategy/beliefs.md` at session start alongside project context. When working on any project, check whether new information confirms, challenges, or invalidates existing beliefs.
+### Morning Sync
+If a new finding clearly strengthens or challenges a belief, note it briefly (e.g., "Strengthens B3" or "Challenges B7 — [why]"). Don't force a strategic signal check on every update — only flag when something genuinely moves the needle.
 
-**Every meeting digestion:** After extracting decisions and updates, ask: "Does anything from this meeting update a belief, add competitive context, or resolve an open question?" If yes, update `strategy/` files as part of the same commit.
+### Meeting Digestion
+Extract strategic signals only when they're present — new evidence for/against beliefs, competitive observations mentioned in passing, or questions nobody answered. Not every meeting has strategic content.
 
-**Every morning sync:** Include a "Strategic Signals" section (1-3 lines max) noting which beliefs were strengthened or challenged by the day's data.
+### Brainstorming & New Work
+Pull relevant beliefs and open questions as starting context. This is where the strategy layer adds the most value — connecting past evidence to new decisions.
 
-**Every brief/PRD/RFC:** Before writing, read relevant beliefs and open questions. The strategy layer should inform how features are framed, not just what gets built.
-
-**Proactive synthesis:** When you notice a pattern across projects — experiment results pointing in the same direction, multiple meetings surfacing the same concern, data from different sources converging — surface it by updating `beliefs.md` or adding to `open-questions.md`. Don't wait to be asked.
+### Proactive Synthesis
+When you notice a pattern across projects — experiment results pointing in the same direction, multiple meetings surfacing the same concern, data from different sources converging — surface it by updating `beliefs.md` or adding to `open-questions.md`. Don't wait to be asked.

@@ -4,9 +4,24 @@ All notable changes to the Product Development OS. Each version represents a mea
 
 ---
 
+## v3.3 — 2026-04-07 — "Pull, Don't Push"
+
+Backported from a cross-repo audit comparing a production knowledge base against a second team's implementation. Key insight: prescriptive "read everything before doing anything" instructions burn agent context window on prerequisites instead of the actual task. These changes make the system pull-based — agents load context proportional to the task, not proportional to the repo.
+
+### Changed
+- **CLAUDE.md shortened** — Cut from 318 lines to ~100 lines. Now an orientation doc only. All prescriptive rules remain in `.claude/rules/`. Reduces context window consumption at session start.
+- **beliefs.md tiered** — Three tiers: Core Beliefs (5-6 max, inform all product work), Working Hypotheses (experiment-specific, change monthly), Market Context (stable background). Agents now know which beliefs to prioritize. Template and examples updated.
+- **Strategy layer: pull-based context loading** — Replaced prescriptive "every session: read beliefs, every meeting: check open-questions" with "pull context as needed based on the task." Strategy signals flagged only when genuinely present, not forced on every workflow.
+- **GH Action now fails** — `repo-hygiene.yml` exits with error (not warning) when unauthorized root files are added. Matches pre-commit hook severity.
+
+### Context
+A comparative audit with a second team's knowledge base revealed that our template's "read everything first" philosophy, while thorough, creates a context window problem at scale. The fix: keep all the same knowledge infrastructure, but let agents pull what they need instead of pushing everything upfront.
+
+---
+
 ## v3.2 — 2026-04-04 — "Self-Maintaining Knowledge"
 
-Backported from a full repo audit of the production Smart Campaigns knowledge base (27 projects, 3+ months). Addresses the most common drift patterns: INDEX.md going stale between hygiene runs, source doc links losing freshness tracking, experiment results not feeding back into strategic questions, and beliefs accumulating without lifecycle management.
+Backported from a full repo audit of the production knowledge base (27 projects, 3+ months). Addresses the most common drift patterns: INDEX.md going stale between hygiene runs, source doc links losing freshness tracking, experiment results not feeding back into strategic questions, and beliefs accumulating without lifecycle management.
 
 ### Added — Conventions
 - **INDEX.md drift check in morning-sync** — Morning sync now cross-checks `projects/INDEX.md` phases against actual README.md phases for every project mentioned that day. Catches drift between monthly hygiene runs.
