@@ -27,4 +27,4 @@ Redesign the merchant analytics dashboard to show clearer revenue breakdowns —
 - Figma: [Figma link](https://figma.com/design/[YOUR_FILE_KEY]/Merchant-Dashboard-Redesign)
 - Frontend RFC: `rfc-frontend.md` (not started)
 - Backend RFC: `rfc-backend.md`
-- Jira epic: [PROJ-1234](https://yourcompany.atlassian.net/browse/PROJ-1234)
+- Jira epic: [DASH-1234](https://yourcompany.atlassian.net/browse/DASH-1234)

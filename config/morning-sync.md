@@ -44,10 +44,10 @@ Scan the PM's DMs from the lookback window. PM's Slack user ID: `[YOUR_SLACK_USE
 | Meeting name pattern | Primary output | Secondary updates |
 |---------------------|----------------|-------------------|
 | [Team Weekly] | meetings/weekly/[date].md | Relevant project updates.md, decisions.md |
-| [Leadership Forum] | meetings/leadership-forum/[date]/ | product/overview.md, roadmap/, relevant project updates.md |
 | [Eng Standup] | Relevant project updates.md | — |
 | [Design Review] | Relevant project designs.md, updates.md | — |
-| [DS Sync] | Relevant project truths.md | data-science/ if analysis discussed |
+| [Leadership Forum] (if leadership-forum add-on enabled) | meetings/leadership-forum/[date]/ | product/overview.md, roadmap/, relevant project updates.md |
+| [DS Sync] (if data-science add-on enabled) | Relevant project truths.md | data-science/ if analysis discussed |
 
 For meetings not matching any pattern: surface in report with extracted content and let PM decide routing.
 

@@ -6,7 +6,7 @@ Given a project name, provide a comprehensive answer to any question about it.
 1. Find the project folder under `projects/`.
 2. Read every file in that folder.
 3. Read `projects/INDEX.md` for related projects. Read their CONTEXT.md and decisions.md.
-4. Check `data-science/INDEX.md` for relevant analyses.
+4. If `data-science/` exists at the repo root (the DS add-on is enabled), check `data-science/INDEX.md` for relevant analyses. Otherwise skip.
 
 ## Answering
 - **"What's the state of X?"** → Executive summary: phase, launch, team, latest activity, blockers.

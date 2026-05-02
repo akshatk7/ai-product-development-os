@@ -4,9 +4,179 @@ All notable changes to the Product Development OS. Each version represents a mea
 
 ---
 
+## v6.0 — 2026-05-02 — "Bare-Bones Core + Opt-In Add-Ons"
+
+Reshape pass driven by the goal of making the OS shareable beyond a single org. Previous versions accumulated patterns that worked well for a mid-size product team with separate Eng/DS/Design functions, on-call rotation, and a leadership forum — but landed as too-much-machinery for the wider audience the OS is intended for: solo PMs, startup PMs, consultants, and PMs at companies whose team shape doesn't match that template.
+
+The core principle: **default install is the smallest useful thing; depth is available via add-ons.** No sophistication is removed — the morning-sync classifiers, beliefs lifecycle, monthly audit agent, four-layer hygiene system are all still there. They just don't dominate the first-clone experience.
+
+### Added — `add-ons/` directory
+
+A new top-level `add-ons/` folder for patterns that don't apply universally. Each add-on is a self-contained directory or skill that users move to their repo root to enable. New `add-ons/README.md` documents the index + enable instructions.
+
+### Moved — Team-shape-specific patterns to add-ons
+
+| Was | Now |
+|---|---|
+| `engineering/` (oncall, post-mortems, ways-of-working) | `add-ons/engineering/` |
+| `data-science/` (DS folder structure, INDEX, backlog, conventions) | `add-ons/data-science/` |
+| `meetings/leadership-forum/` (bi-weekly leadership prep workflow) | `add-ons/leadership-forum/` |
+| `.claude/skills/customer-feedback-scan/` (Slack/chat feedback sweep) | `add-ons/skills/customer-feedback-scan/` |
+| `.claude/skills/call-transcript-scan/` (recorded-call analysis) | `add-ons/skills/call-transcript-scan/` |
+| `.claude/skills/investigate-alert/` (alert/oncall investigation) | `add-ons/skills/investigate-alert/` |
+
+To enable any of these, move the directory or skill out of `add-ons/` to its target location. Skills/agents that reference these directories now check existence at runtime and skip gracefully when an add-on isn't enabled.
+
+### Added — New add-ons ported from production use
+
+- **`add-ons/memories/`** — Pattern for repo-wide persistent learnings (cross-cutting gotchas, resolved-incident signatures, standing rules learned the hard way). Different from skill-level `gotchas.md` — these apply to any agent or workflow in the repo. Folder ships with `README.md`, `INDEX.md`, and `_template.md`. Move to `.claude/memories/` to enable. Ported (and generalized) from production use.
+- **`add-ons/skills/figma-screenshots/`** — Skill that exports Figma design screens as PNGs into a project's `screenshots/` folder. Uses a `figma-summary.md` node-ID reference table to make repeat exports near-free. Cost-optimized for the Figma MCP. Ported from production use.
+
+### Reframed — `customer-intelligence/`
+
+Rewrote `customer-intelligence/README.md` as a tool-agnostic voice-of-customer placeholder. Previously assumed Slack feedback channels and call transcripts as primary sources. Now treats the folder as an open-ended home for any customer signal — support tickets, NPS, sales calls, in-product feedback, social mentions, churn interviews, etc. — with the specific scan skills moved to add-ons. The folder ships with just the README; subfolders (deep-dives/, scans/) are created organically.
+
+### Slimmed — `QUICKSTART.md`
+
+Reduced from 11 setup steps to 5 essential ones (clone, fill team, describe product, seed strategy, create first project). Slack registration, glossary build, customer-feedback channel registration, and roadmap connection are now in a "Expanding from here" section that points to CUSTOMIZE.md and add-ons/. Goal: time-to-first-value drops from "did all 11 steps" to "did 5 steps; everything else can wait."
+
+### Updated — Skills and agents made directory-conditional
+
+`brief-starter`, `monthly-audit`, `project-analyst`, `repo-navigator`, and references in `.claude/rules/data-science.md` and `.claude/rules/meetings.md` now check whether `data-science/`, `engineering/`, or `meetings/leadership-forum/` exist at the repo root before referencing them. Add-on-disabled installs no longer hit "directory doesn't exist" paths.
+
+### Updated — Routing artifacts
+
+- `CLAUDE.md` repo structure tree, ownership table, and workflow table reflect the new core/add-ons split.
+- `.cursorrules` routing table updated.
+- `config/repo-hygiene.json` adds `add-ons` to `allowed_root_dirs`. `data-science` and `engineering` remain allowed (for users who enable those add-ons by moving them to root).
+- `.githooks/pre-commit` routing-guide error message updated.
+- `CUSTOMIZE.md` adds an Add-ons section with enable commands; the "Removing Optional Sections" table is trimmed to just the genuinely-removable core sections.
+
+### Not changed
+
+- `README.md` is intentionally untouched — it's the GitHub landing page and serves dual duty as marketing and onboarding.
+- Core skills (morning-sync, digest-meeting, brief-starter, ship-review-prep, resolve-open-questions) and core agents (brief-reviewer, decision-auditor, project-analyst, repo-navigator, monthly-audit) remain in `.claude/`.
+- All hygiene enforcement (pre-commit, CI, daily morning-sync, monthly audit) remains active.
+- `data-science/` and `engineering/` remain in `allowed_root_dirs` — moving them out of `add-ons/` to root does not require a config change.
+
+### Migration note for existing users
+
+If you've been using a previous version with `engineering/` or `data-science/` at root, your repo will continue to work as-is — the directories remain in `allowed_root_dirs`. The change only affects fresh clones, where these directories now ship under `add-ons/` and require an explicit `mv` to enable.
+
+---
+
+## v5.0 — 2026-04-23 — "Config-Driven Hygiene + Skill Linting"
+
+Major update backported from a second-wave audit of a production PM knowledge base. Where v4.0 added guardrails, v5.0 makes them **config-driven** (single source of truth), adds two new enforcement layers (link-check CI + monthly audit agent), and overhauls the morning-sync and weekly-prep skills so the PM's manual review drops from ~30% rejection rate to a categorized triage pass. Every change is battle-tested in production.
+
+### Added — Config as single source of truth
+- **`config/repo-hygiene.json`** — One config file, multiple consumers. Defines allowed dirs, freshness SLAs by phase, phase-required files, project categories, channel roles, experiment-decision keywords. Pre-commit, CI, and skills all read from here. No more CI-vs-hook drift.
+- **`config/README.md`** — How to update. Rules: only edit the config, never hardcode values in consumers.
+
+### Added — Enforcement layers
+- **`.github/workflows/link-check.yml`** — Weekly + per-push lychee link check. Catches broken internal markdown links (the `chorus-call-analysis.md`-style rot we kept hitting manually). External auth-gated domains excluded by default — customize for your team's tools.
+- **Pre-commit README header convention check (ERROR)** — Every `projects/*/*/README.md` must have Phase / Status / Last updated YYYY-MM-DD / Team. Format drift was a recurring cleanup target; now it's blocked at commit time.
+- **Pre-commit lifecycle file check (WARNING)** — When a project's phase is set to Designs / RFCs / Coding / Live, required files (product-brief, rfc, updates, decisions) must exist. Forces seeding at phase-transition time instead of discovering the gap during monthly hygiene.
+- **Pre-commit strategy activity check (WARNING)** — Warns if `beliefs.md` is committed with no `Last challenged` fields.
+- **CONTEXT.md journal check promoted to ERROR** (was WARNING in v4.0).
+- **Skills now require `runs.log` in addition to `gotchas.md`** (ERROR).
+
+### Added — `.claude/agents/monthly-audit.md`
+A scheduled deep-audit agent template. User runs `/schedule` with the included prompt; on the 1st of each month, it runs the full hygiene audit and opens a single PR with proposed fixes. Safety net for whatever slips through pre-commit + CI + daily morning-sync.
+
+### Added — `roadmap/strategic-initiatives.md`
+Template for ongoing strategic workstreams (big bets, adoption strategy, cross-team alignments) that don't generate daily Slack pings but need weekly coverage. The weekly prep skill auto-reads this file and includes `status: active` items in Top of Mind. Prevents "strategic item dropped from weekly update because no Slack thread fired" drift.
+
+### Changed — `.githooks/pre-commit` (rewrite)
+Hook now:
+- Reads all thresholds from `config/repo-hygiene.json` via jq (fails loudly if jq missing or JSON invalid).
+- Includes 10 checks (up from 7 in v4.0): root placement, CLAUDE.md size, CONTEXT journal (ERROR), file size, skills compliance (ERROR + runs.log), INDEX co-change (WARN), .DS_Store, README convention (ERROR), lifecycle files (WARN), strategy activity (WARN).
+
+### Changed — `.github/workflows/repo-hygiene.yml` (rewrite)
+Four jobs now (up from one): check-root-files, context-md-journal, claude-md-length, readme-convention. All four read from `config/repo-hygiene.json`.
+
+### Changed — `.claude/rules/document-conventions.md`
+- **Freshness SLA by phase** table added (Live 7d, Coding 14d, ... Exploratory 60d).
+- **Lifecycle file requirements** table added.
+- **Automated Hygiene Enforcement** section documents the 4-layer model (pre-commit, CI, morning-sync daily, monthly agent).
+- Monthly hygiene checklist reframed as manual backstop to the agent.
+
+### Changed — `.claude/skills/morning-sync/SKILL.md` (major rewrite)
+Ten additions, all addressing friction patterns observed in production:
+- **Phase 0 mandatory pre-run checklist** — python3 timestamp computation with inverse verification (fixes recurring 1-year-off bug), runs.log overlap check, gotchas read, day-name/date validation.
+- **Channel role tags** (pm/eng/ds/monitor) — eng/ds roles only surface items with product keywords. Cuts ~25% of dismissable eng-noise items.
+- **DM Heuristic Classifier** — 4-bucket filter (logistical / casual / concrete / ack). Only extracts concrete. Cuts DM over-extraction by ~70%.
+- **Experiment-Decision Confidence Classifier** — "decided"/"winner" claims require explicit confirmed-tier keyword from transcript. Prevents the recurring overclaim-a-still-running-experiment pattern.
+- **Auto-Actions Layer (Phase 2b)** — auto-propose (never write) updates to `team/people.md` on staffing signals; propose README phase changes on keyword triggers; propose `projects/INDEX.md` rows for new projects; draft Slack summary for posting (awaits approval).
+- **Report Format: 4 sections** — Hygiene Scorecard at the top (stale SLAs, INDEX drift, stale beliefs, orphans) + Proposed Updates + Deliverables & New Work + categorized Needs-Your-Input (5 buckets instead of a flat pile).
+- **Pre-Output Linter** — 8 checks run before presenting draft. Turns accumulated gotchas into code, not re-reads.
+- **user_rejection_rate** tracked in runs.log — >30% for 2 runs = stop and analyze instead of shipping a broken classifier.
+
+### Changed — `meetings/weekly/CLAUDE.md` (major rewrite)
+- **Phase 0** — load `config/repo-hygiene.json` + read `roadmap/strategic-initiatives.md`.
+- **Step 2 git-diff filter** — projects with zero commits in the week are auto-omitted (unless `monitoring: yes` or in strategic-initiatives).
+- **Step 2.0** — strategic-initiatives auto-inclusion.
+- **Step 5 spreadsheet write-back** — requires a proposed-changes table in the draft before any cell is written.
+- **Step 5.0** — cross-reference mismatch detection (the unique value of weekly-status skill, now folded in).
+- **Step 6 roll-forward discipline** — explicit `[changed]/[unchanged]/[complete]/[monitoring]` tags per item.
+- **Step 9 Pre-Output Linter** — 9 checks including section scoping lint (categories in config), discussion-topics cap=5, duplication check, keyword-based experiment-decision check.
+
+### Deprecated
+- **`.claude/skills/weekly-status/`** → `.claude/skills/_deprecated/weekly-status/`. Its unique logic is folded into weekly prep Step 5.0. Two overlapping skills produced split gotchas and unclear trigger semantics. Scheduled for deletion after one month of parallel availability per STANDARDS.md.
+
+### Context
+Six weeks after v4.0 shipped, a deep audit of a production PM knowledge base revealed two categories of residual friction: (1) rule sprawl — gotchas.md was accumulating lessons but the rules weren't enforced automatically, so the PM did the enforcement on every run; (2) skill overlap — two skills for "weekly" work with unclear boundaries. v5.0 moves enforcement from "read the gotchas" to "linter checks before output," introduces config as the single source of truth across all consumers, and consolidates the weekly flow into one skill.
+
+---
+
+## v4.0 — 2026-04-22 — "Guardrails & Analytics"
+
+Major update backported from 6 weeks of production use. Adds structural guardrails that prevent the most common drift patterns, 4 analytics/DS skills, 4 PM workflow commands, and documentation improvements. Every addition was battle-tested in production before being generalized.
+
+### Added — Structural Guardrails
+- **Enhanced pre-commit hook** — 7 checks: root file placement, CLAUDE.md line limit (150 max), CONTEXT.md journal detection (blocks dated section headers), file size limit (500KB), skills compliance (SKILL.md requires gotchas.md), INDEX.md co-change reminder, .DS_Store blocking. Errors block; warnings advise.
+- **`.claude/rules/claude-md-ownership.md`** — Routing table for where content belongs. Prevents CLAUDE.md bloat by defining that it's orientation only (max 150 lines, PM-owned) and directing rules/setup docs to their correct homes.
+
+### Added — Skills
+- **`/power-analysis`** — Statistical power sizing for A/B experiments: sample size, MDE, duration, sensitivity analysis. Supports proportions, continuous, and ratio metrics.
+- **`/causal-analysis`** — Full causal inference workflow: DiD, RDD, IV, synthetic control, propensity matching, CATE, meta-learners, DML. Method selection guide, implementation templates, validation checks.
+- **`/sql-validation`** — Static SQL analysis: fanout join detection, NULL handling, date boundary errors, aggregation issues, performance anti-patterns, Snowflake-specific pitfalls. Run before executing queries.
+- **`/bug-bash`** — Structured test plan execution: orient → learn designs → execute test plan → file bugs → report. Works with Google Sheets test plans, Figma designs, and any tracker.
+
+### Added — Commands
+- **`/debrief-thread`** — Parse a Slack thread URL → read full thread → structured debrief with topic, context, key perspectives, expected actions, and linked resources.
+- **`/prep-meeting`** — Gather context from meeting notes, project files, Slack, and status trackers to draft a meeting briefing and agenda.
+- **`/generate-launch-email`** — Generate internal product launch emails following best practices: TL;DR, problem, solution, visuals, results, what's next, team.
+- **`/review-launch-email`** — Audit a draft launch email against best practices. Section-by-section checklist, scoring (Strong/Solid/Needs Work), and prioritized rewrite suggestions.
+
+### Changed — Rules & Standards
+- **document-conventions.md** — Added RFC Workflow Integration (full PR URLs, ticker tracker sync after PR creation) and Data Output Policy (no CSVs in git, 500KB limit, data warehouse guidance).
+- **meetings.md** — Added Meeting → File Routing template table: 5 meeting types mapped to primary outputs and secondary update targets. Teams customize for their meetings.
+- **STANDARDS.md** — Added Portability Rules (no absolute paths, no hardcoded IDs/URLs/names) and Deprecation Procedure (mark → keep 1 month → archive/delete).
+
+### Changed — Documentation
+- **CUSTOMIZE.md** — Added two optional add-ons: Prototyping Workflow (live codebase prototyping pattern) and Operational Memory / Oncall Learnings (`.claude/memories/` with self-improving investigation patterns).
+
+### Context
+A deep audit of a production PM knowledge base (200+ commits, 27 projects, 5 months) revealed three categories of issues: (1) structural drift that guardrails can prevent (CLAUDE.md bloat from 100→220 lines, CONTEXT.md becoming journals, large CSVs committed), (2) missing PM workflow tooling (meeting prep, Slack debriefs, launch emails, QA), and (3) missing analytics capabilities (power analysis, causal inference, SQL validation). This release closes all three gaps with proven patterns — every skill and guardrail was tested against real project work before being generalized.
+
+---
+
+## v3.4 — 2026-04-08 — "Action Items"
+
+Morning sync now extracts PM action items alongside repo updates. Previously, the sync only captured knowledge (decisions, context, status) but missed things the PM needs to DO (send a Slack message, schedule a meeting, reply to a DM, update a doc). Action items are presented in the report as an executable table, and the agent helps draft and send messages, create calendar events, etc. after repo updates are committed.
+
+### Changed
+- **morning-sync skill** — Added action item extraction in Phase 2, "Action Items (You)" section in Phase 3 report, and Phase 5 for executing approved action items via Slack/Calendar/Docs MCPs.
+
+### Context
+Real-world usage showed that ~40% of meeting outcomes are action items, not knowledge updates. The morning sync was capturing "what we learned" but losing "what we need to do." PMs were tracking action items in a separate mental list or a different Claude session. Now it's one workflow: scan → propose repo updates → surface action items → execute both.
+
+---
+
 ## v3.3 — 2026-04-07 — "Pull, Don't Push"
 
-Backported from a cross-repo audit comparing a production knowledge base against a second team's implementation. Key insight: prescriptive "read everything before doing anything" instructions burn agent context window on prerequisites instead of the actual task. These changes make the system pull-based — agents load context proportional to the task, not proportional to the repo.
+Backported from a cross-repo audit comparing two production PM knowledge bases. Key insight: prescriptive "read everything before doing anything" instructions burn agent context window on prerequisites instead of the actual task. These changes make the system pull-based — agents load context proportional to the task, not proportional to the repo.
 
 ### Changed
 - **CLAUDE.md shortened** — Cut from 318 lines to ~100 lines. Now an orientation doc only. All prescriptive rules remain in `.claude/rules/`. Reduces context window consumption at session start.
@@ -15,13 +185,13 @@ Backported from a cross-repo audit comparing a production knowledge base against
 - **GH Action now fails** — `repo-hygiene.yml` exits with error (not warning) when unauthorized root files are added. Matches pre-commit hook severity.
 
 ### Context
-A comparative audit with a second team's knowledge base revealed that our template's "read everything first" philosophy, while thorough, creates a context window problem at scale. The fix: keep all the same knowledge infrastructure, but let agents pull what they need instead of pushing everything upfront.
+A comparative audit with another PM team's knowledge base revealed that this template's "read everything first" philosophy, while thorough, creates a context window problem at scale. The fix: keep all the same knowledge infrastructure, but let agents pull what they need instead of pushing everything upfront.
 
 ---
 
 ## v3.2 — 2026-04-04 — "Self-Maintaining Knowledge"
 
-Backported from a full repo audit of the production knowledge base (27 projects, 3+ months). Addresses the most common drift patterns: INDEX.md going stale between hygiene runs, source doc links losing freshness tracking, experiment results not feeding back into strategic questions, and beliefs accumulating without lifecycle management.
+Backported from a full repo audit of a production PM knowledge base (27 projects, 3+ months). Addresses the most common drift patterns: INDEX.md going stale between hygiene runs, source doc links losing freshness tracking, experiment results not feeding back into strategic questions, and beliefs accumulating without lifecycle management.
 
 ### Added — Conventions
 - **INDEX.md drift check in morning-sync** — Morning sync now cross-checks `projects/INDEX.md` phases against actual README.md phases for every project mentioned that day. Catches drift between monthly hygiene runs.
@@ -124,7 +294,7 @@ Introduces `updates.md` to separate chronological project logs from narrative co
 - Reinforced: files created organically, never pre-created empty
 
 ### Context
-Audit of 20 project folders found two failure patterns: (1) one project's CONTEXT.md was 835 lines, 52% chronological across 10 dated sections. (2) Another was 133 lines, 71% chronological. Meanwhile, well-structured projects (65 lines, 0% chronological) proved the pattern works when content is properly routed. The fix separates the "what is this project" narrative from the "what happened this week" journal.
+Audit of 20 project folders found two failure patterns: (1) SL Integration CONTEXT.md was 835 lines, 52% chronological across 10 dated sections. (2) First Redemption Acceleration was 133 lines, 71% chronological. Meanwhile, well-structured projects like Transparency Metrics (65 lines, 0% chronological) proved the pattern works when content is properly routed. The fix separates the "what is this project" narrative from the "what happened this week" journal.
 
 ---
 

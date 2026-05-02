@@ -1,78 +1,73 @@
 # Quickstart Guide
 
-Get your team's knowledge base running in 11 steps.
+Get your team's knowledge base running in 5 steps. Each step is independent — you don't need a perfect setup to start getting value.
 
 ---
 
-## Step 1: Clone the repo
+## Step 1: Clone the repo as your team's KB
 
 ```bash
-git clone [YOUR_REPO_URL]
-cd ai-product-development-os
+git clone https://github.com/akshatk7/ai-product-development-os.git my-team-knowledge-base
+cd my-team-knowledge-base
+rm -rf .git && git init
+```
+
+Then push to your own GitHub repo:
+
+```bash
+git remote add origin <your-team-repo-url>
+git add -A && git commit -m "Initialize from AI Product Development OS"
+git push -u origin main
 ```
 
 ## Step 2: Fill in your team
 
-Edit `team/people.md` with your org chart — who's on the team, their roles, and reporting lines.
+Edit `team/people.md` with your org chart — who's on the team, their roles, who they report to. This is the file the OS reads to understand who does what.
 
-## Step 3: Register your Slack channels
+`team/rituals.md` and `team/channels.md` can stay as-is for now; come back to them when you have time.
 
-Edit `config/morning-sync.md` to register your Slack channels with their channel IDs and project mappings. `team/channels.md` will be auto-generated from this config.
+## Step 3: Describe the product in one paragraph
 
-## Step 4: Document your meetings
+Edit `product/overview.md` — a short paragraph (or page) that explains what your product is and how it works. This is the document agents and new team members read first to get oriented.
 
-Edit `team/rituals.md` with all recurring meetings — name, cadence, time, attendees, and the doc/tool used.
+That's the minimum. `product/terminology.md` and `product/metrics.md` are optional starting out — populate them as terms and metrics come up.
 
-## Step 5: Describe your product
+## Step 4: Seed strategy with 1–2 beliefs
 
-Write `product/overview.md` — what the product is, how it works, key milestones, current strategy. This is the single document that gives anyone full product context in 5 minutes.
+In `strategy/beliefs.md`, write 1 or 2 hypotheses your team currently holds about customers, the product, or the market. Use the schema in the file: confidence, evidence for, evidence against, implications, last challenged.
 
-## Step 6: Build your glossary
+These don't need to be proven. The strategy layer compounds — every meeting digestion, brief, and analysis adds to it.
 
-Edit `product/terminology.md` with every acronym, internal term, and domain concept your team uses. This is the first file new team members and agents should read.
-
-## Step 7: Seed your strategy layer
-
-Fill in the `strategy/` files:
-- `strategy/beliefs.md` — Write 3-5 hypotheses the team currently holds about customers, product, or market. Use the schema in the file (confidence level, evidence, implications). These don't need to be proven — they're hypotheses.
-- `strategy/competitive.md` — Add 2-3 observations about competitors or analogous products.
-- `strategy/open-questions.md` — Write the 2-3 biggest strategic uncertainties facing the team.
-
-The strategy layer gets smarter over time. Start small — every meeting and analysis will add to it.
-
-## Step 8: Create your first project
+## Step 5: Create your first project
 
 ```bash
-cp -r projects/_template projects/your-project-name
+cp -r projects/_template projects/your-first-project
 ```
 
-Fill in `README.md` with the project overview, then add `CONTEXT.md` linking to your source Google Doc. See `projects/_example/` for what a filled-in project looks like.
-
-## Step 9: Set up the morning sync
-
-Edit `config/morning-sync.md` to map your Slack channels to project folders. This powers the `/morning-sync` skill that pulls context from the previous business day.
-
-## Step 10: Register customer feedback channels
-
-Edit `customer-intelligence/README.md` to register your feedback channels (support, sales, product feedback). This powers the `/customer-feedback-scan` skill.
-
-## Step 11: Connect your roadmap
-
-Edit `roadmap/CLAUDE.md` with links to your roadmap spreadsheet and any other tracking tools. Define the update workflow so the agent knows how to propose changes.
+Fill in the project's `README.md` (phase, team, key links). Add a `CONTEXT.md` with a one-paragraph problem statement and a link to your source brief if you have one. See `projects/_example/` for what a fleshed-out project looks like.
 
 ---
 
-## You're Done
+## What you can do now
 
-Your daily workflow now looks like this:
+- `/repo-navigator` — interactive tour of what's where in your KB
+- `/brief-starter` — gather context from past projects before writing a new brief
+- `/digest-meeting` — turn a meeting transcript into routed project updates and decisions
+- `/morning-sync` — daily sweep of overnight activity (requires registering channels in `config/morning-sync.md` first)
 
-- **Morning:** `/morning-sync` pulls overnight activity from Slack + meetings, proposes repo updates, flags strategic signals
-- **During the day:** Decisions, research findings, and design specs get added to project folders as work happens
-- **Monday:** "write top of mind for [date]" drafts the weekly meeting doc from all accumulated context
-- **Before leadership syncs:** "prep leadership forum for [date]" assembles a strategic briefing
-- **After any meeting:** "digest the notes from [meeting]" extracts decisions, updates project files, and checks strategy/beliefs.md
-- **Weekly:** "weekly status" pulls a cross-referenced snapshot from all tracking sources
-- **Periodically:** "scan for customer feedback" sweeps Slack for product signal
+Full skill and agent inventory in CLAUDE.md.
+
+---
+
+## Expanding from here
+
+When you're ready for more, see:
+
+- **`CUSTOMIZE.md`** — adapt the OS to your team's tools (Slack vs Teams, Jira vs Linear, Figma vs Sketch, etc.)
+- **`add-ons/README.md`** — opt-in patterns for engineering, data science, leadership-forum, and more
+- **`config/morning-sync.md`** — register your chat channels for the morning sync skill
+- **`roadmap/CLAUDE.md`** — connect your roadmap source (spreadsheet, Linear roadmap, etc.)
+- **`customer-intelligence/`** — start collecting customer signal in whatever shape fits your product
 
 The repo gets smarter over time. Every decision logged, every finding recorded, every meeting digested, every belief challenged makes the next task faster.
 

@@ -1,48 +1,230 @@
 #!/bin/bash
-# Pre-commit hook: prevent files/dirs from being created at the repo root
-# outside the approved list. This keeps the repo structure clean.
+# Pre-commit hook: structural guardrails for the knowledge base.
+# Reads rules from config/repo-hygiene.json (single source of truth).
+#
+# Checks:
+#   1. Root file placement (allowed_root_files, allowed_root_dirs)
+#   2. CLAUDE.md line limit (claude_md_max_lines)
+#   3. CONTEXT.md journal detection (context_md_blocked_regex) — ERROR
+#   4. File size limit (500KB, excluding binaries)
+#   5. Skills compliance (skill_required_files) — gotchas.md + runs.log — ERROR
+#   6. INDEX.md co-change reminder — WARNING
+#   7. .DS_Store block — ERROR
+#   8. README.md convention (readme_required_fields) — ERROR
+#   9. Lifecycle-aware file requirements (phase_required_files) — WARNING
+#   10. Strategy file activity check — WARNING
 
-ALLOWED_ROOT_FILES="CLAUDE.md|README.md|QUICKSTART.md|CUSTOMIZE.md|CHANGELOG.md|\.cursorrules|\.gitignore|\.DS_Store"
-ALLOWED_ROOT_DIRS="\.claude|\.cursorrules|\.github|\.githooks|config|customer-intelligence|data-science|design|engineering|meetings|product|projects|reference-docs|roadmap|strategy|team|docs"
+set -u
 
-errors=""
-
-# Check for new files at the repo root
-for file in $(git diff --cached --name-only --diff-filter=A); do
-    # Skip files in subdirectories
-    if [[ "$file" == *"/"* ]]; then
-        continue
-    fi
-    # Check against allowed list
-    if ! echo "$file" | grep -qE "^($ALLOWED_ROOT_FILES)$"; then
-        errors="${errors}  - ${file}\n"
-    fi
-done
-
-# Check for new directories at the repo root
-for file in $(git diff --cached --name-only --diff-filter=A); do
-    dir=$(echo "$file" | cut -d'/' -f1)
-    if ! echo "$dir" | grep -qE "^($ALLOWED_ROOT_DIRS)$"; then
-        if [[ "$file" == *"/"* ]]; then
-            errors="${errors}  - ${dir}/ (new root directory)\n"
-        fi
-    fi
-done
-
-if [ -n "$errors" ]; then
-    echo "ERROR: New files/directories at the repo root are not allowed."
-    echo ""
-    echo "Blocked:"
-    echo -e "$errors"
-    echo ""
-    echo "Route your content to the correct folder:"
-    echo "  product/     — Product overview, strategy, terminology"
-    echo "  projects/    — Project-specific artifacts"
-    echo "  engineering/ — Eng reference docs"
-    echo "  data-science/— DS analyses"
-    echo "  strategy/    — Beliefs, competitive intel, open questions"
-    echo "  customer-intelligence/ — Feedback scans, deep dives"
-    echo ""
-    echo "See .cursorrules for the full routing table."
-    exit 1
+CONFIG="config/repo-hygiene.json"
+if [ ! -f "$CONFIG" ]; then
+  echo "ERROR: $CONFIG missing. Pre-commit hook cannot run without the config."
+  exit 1
 fi
+if ! command -v jq >/dev/null 2>&1; then
+  echo "ERROR: jq not installed. Install with 'brew install jq' (macOS) or 'apt install jq' (Linux) and retry."
+  exit 1
+fi
+
+# Validate config parses — fail fast if JSON is broken.
+if ! jq empty "$CONFIG" 2>/dev/null; then
+  echo "ERROR: $CONFIG is not valid JSON. Fix before committing."
+  jq empty "$CONFIG"
+  exit 1
+fi
+
+ERRORS=""
+WARNINGS=""
+
+# Helpers
+cfg_array() { jq -r ".$1[]" "$CONFIG"; }
+cfg_scalar() { jq -r ".$1" "$CONFIG"; }
+
+# ──────────────────────────────────────────────
+# CHECK 1: Block new files/folders at repo root
+# ──────────────────────────────────────────────
+ALLOWED_ROOT_FILES=$(cfg_array 'allowed_root_files' | sed 's/\./\\./g' | tr '\n' '|' | sed 's/|$//')
+ALLOWED_DIRS=$(cfg_array 'allowed_root_dirs' | sed 's/\./\\./g' | tr '\n' '|' | sed 's/|$//')
+
+ROOT_ADDITIONS=$(git diff --cached --name-only --diff-filter=A | grep -v '/' | grep -Ev "^($ALLOWED_ROOT_FILES)$" || true)
+ROOT_DIRS=$(git diff --cached --name-only --diff-filter=A | grep '/' | cut -d'/' -f1 | sort -u || true)
+BAD_DIRS=$(echo "$ROOT_DIRS" | grep -Ev "^($ALLOWED_DIRS)$" | grep -v '^$' || true)
+
+if [ -n "$ROOT_ADDITIONS" ]; then
+  ERRORS="$ERRORS\n  [ROOT] New files at root: $ROOT_ADDITIONS"
+fi
+if [ -n "$BAD_DIRS" ]; then
+  ERRORS="$ERRORS\n  [ROOT] New root directories: $BAD_DIRS"
+fi
+
+# ──────────────────────────────────────────────
+# CHECK 2: CLAUDE.md line limit
+# ──────────────────────────────────────────────
+CLAUDE_MAX=$(cfg_scalar 'claude_md_max_lines')
+if git diff --cached --name-only | grep -q "^CLAUDE.md$"; then
+  CLAUDE_LINES=$(git show :"CLAUDE.md" 2>/dev/null | wc -l | tr -d ' ')
+  if [ -n "$CLAUDE_LINES" ] && [ "$CLAUDE_LINES" -gt "$CLAUDE_MAX" ]; then
+    ERRORS="$ERRORS\n  [CLAUDE.md] $CLAUDE_LINES lines (max $CLAUDE_MAX). Move content to .claude/rules/ or section CLAUDE.md."
+  fi
+fi
+
+# ──────────────────────────────────────────────
+# CHECK 3: CONTEXT.md journal detection — ERROR
+# ──────────────────────────────────────────────
+JOURNAL_REGEX=$(cfg_scalar 'context_md_blocked_regex')
+CONTEXT_FILES=$(git diff --cached --name-only | grep 'CONTEXT.md$' | grep -vE '_template/|_example/' || true)
+for cf in $CONTEXT_FILES; do
+  if git show ":$cf" 2>/dev/null | grep -Eq "$JOURNAL_REGEX"; then
+    ERRORS="$ERRORS\n  [JOURNAL] $cf has dated section headers. Move to updates.md (see .claude/rules/document-conventions.md § File Boundary Rules)."
+  fi
+done
+
+# ──────────────────────────────────────────────
+# CHECK 4: File size limit (500KB non-binary)
+# ──────────────────────────────────────────────
+LARGE_FILES=""
+while IFS= read -r f; do
+  if [ -z "$f" ] || [ ! -f "$f" ]; then continue; fi
+  SIZE=$(wc -c < "$f" | tr -d ' ')
+  if [ "$SIZE" -gt 512000 ]; then
+    case "$f" in
+      *.pdf|*.png|*.jpg|*.jpeg|*.gif|*.svg) ;;
+      *) LARGE_FILES="$LARGE_FILES $f ($(( SIZE / 1024 ))KB)" ;;
+    esac
+  fi
+done <<< "$(git diff --cached --name-only --diff-filter=ACM)"
+
+if [ -n "$LARGE_FILES" ]; then
+  ERRORS="$ERRORS\n  [SIZE] Files exceed 500KB (use your data warehouse / Drive for outputs):$LARGE_FILES"
+fi
+
+# ──────────────────────────────────────────────
+# CHECK 5: Skills compliance — SKILL.md requires gotchas.md + runs.log
+# ──────────────────────────────────────────────
+REQ_SKILL_FILES=$(cfg_array 'skill_required_files' | grep -v '^SKILL.md$')
+NEW_SKILLS=$(git diff --cached --name-only --diff-filter=A | grep '\.claude/skills/.*/SKILL.md$' || true)
+for skill in $NEW_SKILLS; do
+  SKILL_DIR=$(dirname "$skill")
+  for req in $REQ_SKILL_FILES; do
+    if [ ! -f "$SKILL_DIR/$req" ] && ! git diff --cached --name-only | grep -q "$SKILL_DIR/$req"; then
+      ERRORS="$ERRORS\n  [SKILL] $skill added without $req. See .claude/skills/STANDARDS.md."
+    fi
+  done
+done
+
+# ──────────────────────────────────────────────
+# CHECK 6: INDEX.md co-change reminder — WARNING
+# ──────────────────────────────────────────────
+CHANGED_READMES=$(git diff --cached --name-only | grep '^projects/.*/README.md$' || true)
+if [ -n "$CHANGED_READMES" ]; then
+  if ! git diff --cached --name-only | grep -q '^projects/INDEX.md$'; then
+    WARNINGS="$WARNINGS\n  [INDEX] Project README(s) changed but projects/INDEX.md not staged. If phase changed, update INDEX."
+  fi
+fi
+
+# ──────────────────────────────────────────────
+# CHECK 7: Block .DS_Store files
+# ──────────────────────────────────────────────
+DS_STORE=$(git diff --cached --name-only --diff-filter=A | grep '\.DS_Store$' || true)
+if [ -n "$DS_STORE" ]; then
+  ERRORS="$ERRORS\n  [DS_STORE] Do not commit .DS_Store: $DS_STORE"
+fi
+
+# ──────────────────────────────────────────────
+# CHECK 8: Project README header convention — ERROR
+# Every projects/<cat>/<project>/README.md must have a Status block.
+# _template/ and _example/ are exempt.
+# ──────────────────────────────────────────────
+NEW_OR_CHANGED_READMES=$(git diff --cached --name-only --diff-filter=ACM \
+  | grep -E '^projects/[^/]+/[^/]+/README.md$' \
+  | grep -vE '_template/|_example/' || true)
+for readme in $NEW_OR_CHANGED_READMES; do
+  CONTENT=$(git show ":$readme" 2>/dev/null)
+  [ -z "$CONTENT" ] && continue
+  MISSING=""
+  echo "$CONTENT" | grep -qE '^\- \*\*Phase:\*\* ' || MISSING="$MISSING Phase"
+  echo "$CONTENT" | grep -qE '^\- \*\*Status:\*\* ' || MISSING="$MISSING Status"
+  echo "$CONTENT" | grep -qE '^\- \*\*Last updated:\*\* [0-9]{4}-[0-9]{2}-[0-9]{2}' || MISSING="$MISSING Last-updated"
+  echo "$CONTENT" | grep -qE '^\- \*\*Team:\*\* ' || MISSING="$MISSING Team"
+  if [ -n "$MISSING" ]; then
+    ERRORS="$ERRORS\n  [README] $readme missing fields:$MISSING. Use format from projects/_template/README.md."
+  fi
+done
+
+# ──────────────────────────────────────────────
+# CHECK 9: Lifecycle-aware file requirements — WARNING
+# When a project's phase is X, required files must exist.
+# ──────────────────────────────────────────────
+for readme in $NEW_OR_CHANGED_READMES; do
+  PROJECT_DIR=$(dirname "$readme")
+  CONTENT=$(git show ":$readme" 2>/dev/null)
+  [ -z "$CONTENT" ] && continue
+  PHASE=$(echo "$CONTENT" | grep -E '^\- \*\*Phase:\*\* ' | head -1 | sed -E 's/^\- \*\*Phase:\*\* //' | sed -E 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  [ -z "$PHASE" ] && continue
+  REQ_FILES=$(jq -r --arg p "$PHASE" '
+    .phase_required_files
+    | to_entries
+    | map(select(.key | ascii_downcase | . as $k | ($p | ascii_downcase | startswith($k))))
+    | .[0].value // []
+    | .[]
+  ' "$CONFIG" 2>/dev/null)
+  for req in $REQ_FILES; do
+    if [ "$req" = "_rfc_any" ]; then
+      if [ ! -f "$PROJECT_DIR/rfc-frontend.md" ] && [ ! -f "$PROJECT_DIR/rfc-backend.md" ]; then
+        WARNINGS="$WARNINGS\n  [LIFECYCLE] $readme phase=$PHASE but no rfc-frontend.md or rfc-backend.md in $PROJECT_DIR/"
+      fi
+    else
+      if [ ! -f "$PROJECT_DIR/$req" ]; then
+        WARNINGS="$WARNINGS\n  [LIFECYCLE] $readme phase=$PHASE requires $req in $PROJECT_DIR/ (missing)"
+      fi
+    fi
+  done
+done
+
+# ──────────────────────────────────────────────
+# CHECK 10: Strategy file activity — WARNING
+# ──────────────────────────────────────────────
+if git diff --cached --name-only | grep -q '^strategy/beliefs.md$'; then
+  STALE_COUNT=$(git show :"strategy/beliefs.md" 2>/dev/null | grep -cE '^\*\*Last challenged:\*\*' || echo 0)
+  if [ "$STALE_COUNT" = "0" ]; then
+    WARNINGS="$WARNINGS\n  [STRATEGY] beliefs.md has no 'Last challenged' fields. Every active belief should track when it was last tested against new data."
+  fi
+fi
+
+# ──────────────────────────────────────────────
+# Output
+# ──────────────────────────────────────────────
+if [ -n "$WARNINGS" ]; then
+  echo ""
+  echo "=========================================="
+  echo "  WARNINGS (commit will proceed)"
+  echo "=========================================="
+  echo -e "$WARNINGS"
+  echo ""
+fi
+
+if [ -n "$ERRORS" ]; then
+  echo ""
+  echo "=========================================="
+  echo "  BLOCKED: Structural guardrails failed"
+  echo "=========================================="
+  echo ""
+  echo "Problems found:"
+  echo -e "$ERRORS"
+  echo ""
+  echo "Rules live in config/repo-hygiene.json — update there, not in the hook."
+  echo ""
+  echo "Quick routing guide:"
+  echo "  product/               -- Product overview, terminology, metrics"
+  echo "  projects/              -- Project-specific artifacts"
+  echo "  strategy/              -- Beliefs, competitive intel, open questions"
+  echo "  customer-intelligence/ -- Voice of customer (feedback, scans, deep dives)"
+  echo "  add-ons/               -- Optional patterns (engineering, data-science, leadership-forum, etc.)"
+  echo "  CLAUDE.md overflow     -> .claude/rules/ or section CLAUDE.md"
+  echo ""
+  echo "If this is intentional, use: git commit --no-verify"
+  echo ""
+  exit 1
+fi
+
+exit 0

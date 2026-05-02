@@ -1,57 +1,54 @@
 # Customer Intelligence
 
 > Owner: PM
-> Last updated: YYYY-MM-DD
 
-All customer voice, feedback, and behavioral analysis lives here. This folder captures signal from multiple sources — support channels, sales calls, feedback surveys, Slack escalations — and synthesizes it into actionable product insights.
+This folder is the home for **voice-of-customer artifacts** — anything that captures what your customers (or users, merchants, partners, members — whatever your product calls them) are saying, thinking, or doing.
 
----
-
-## Sources
-
-| Source | Type | Frequency | Skill |
-|--------|------|-----------|-------|
-| Slack feedback channels | Text (customer-reported issues, internal escalations) | Continuous | `/customer-feedback-scan` |
-| Call transcripts | Audio/text (sales calls, support calls, renewal calls) | Weekly scan | `/call-transcript-scan` |
-| Ad-hoc deep dives | Manual analysis of specific customer behavior | On demand | — |
+What goes here is open-ended on purpose. Different teams collect customer signal from different places: support tickets, NPS surveys, sales calls, in-product feedback, social mentions, churn interviews, app store reviews, Slack escalations, user research sessions. The pattern is the same: capture the signal, look for themes, route insights into projects and strategy.
 
 ---
 
-## Folder Structure
+## Suggested folder structure
+
+Create subfolders only when there's content for them. A new repo starts with just this README.
 
 ```
 customer-intelligence/
-├── README.md                     # This file — sources, conventions, skill triggers
-├── diagnosis-workflow.md         # Step-by-step playbook for diagnosing a customer issue
-├── slack-scans/                  # Dated Slack feedback scan outputs
-│   └── YYYY-MM-DD-scan.md       # One file per scan run
-├── call-scans/                   # Dated call transcript analysis outputs
-│   └── YYYY-MM-DD-topic.md      # One file per scan run
-└── deep-dives/                   # Ad-hoc customer-specific analyses
-    ├── README.md                 # Index of all deep dives
-    └── YYYY-MM-DD-customer.md   # One file per investigation
+├── README.md                 # This file
+├── deep-dives/               # Ad-hoc investigations of specific customers, segments, issues
+│   └── YYYY-MM-DD-topic.md
+└── scans/                    # Recurring sweeps of a feedback source
+    └── YYYY-MM-DD-source.md
 ```
 
----
-
-## How to Use
-
-**Periodic scans:** Run `/customer-feedback-scan` to sweep Slack channels for product signal. Run `/call-transcript-scan` on call recordings for qualitative patterns.
-
-**Ad-hoc investigations:** When a specific customer issue comes up, use `diagnosis-workflow.md` as the playbook.
-
-**Signal → Strategy:** Patterns from scans should flow into `strategy/beliefs.md` (confirming or challenging hypotheses) and `strategy/open-questions.md` (surfacing new uncertainties).
-
-**Signal → Projects:** When feedback directly informs an active project, cross-reference it in the project's `CONTEXT.md` or `updates.md`.
+If you have a structured diagnosis playbook for individual customer investigations, add a `diagnosis-workflow.md` documenting your data sources, dimensions, and output format.
 
 ---
 
-## Slack Channels to Scan
+## How signal flows out of this folder
 
-_Register channels here with their IDs and what signal they carry._
+Customer signal is most valuable when it lands somewhere actionable:
 
-| Channel | ID | Signal Type |
-|---------|----|-------------|
-| _#product-feedback_ | _C0000000000_ | _Customer-reported bugs, feature requests_ |
-| _#support-escalations_ | _C0000000000_ | _Escalated support tickets_ |
-| _#sales-intel_ | _C0000000000_ | _Sales team observations from prospect/customer calls_ |
+- **Confirms or challenges a belief** → update `strategy/beliefs.md` (add evidence to the relevant hypothesis, or move it toward Confirmed/Disproven).
+- **Surfaces a new uncertainty** → add to `strategy/open-questions.md`.
+- **Maps directly to an active project** → cross-reference in that project's `CONTEXT.md` or `updates.md`.
+- **Reveals a system constraint or unexpected behavior** → land it in the relevant project's `truths.md`.
+
+The same finding can land in multiple places. That's expected.
+
+---
+
+## Optional: automated scans
+
+If your team collects feedback in chat tools (Slack, Teams, Discord) or records customer/sales calls, two opt-in skills can sweep those sources on a cadence and write dated scan files into this folder:
+
+- **`add-ons/skills/customer-feedback-scan`** — sweep registered chat channels for product signal, classify by theme/severity.
+- **`add-ons/skills/call-transcript-scan`** — speaker-aware analysis of recorded calls with thematic signal detection.
+
+Move either skill into `.claude/skills/` to enable it. Both are tool-pluggable — the channel registry and transcript source are configured per-team.
+
+---
+
+## Bare-bones is fine
+
+Many teams start with just one or two deep-dives and grow this folder organically as patterns emerge. Don't pre-build infrastructure you don't need. The folder exists so customer signal has a home — what shape that takes is up to you.

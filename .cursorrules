@@ -12,12 +12,11 @@ This repo is a documentation and context repo — NOT source code. Follow these 
 | Team info, meetings, channels | `team/` |
 | Roadmap, goals, projections | `roadmap/` |
 | Project-specific artifacts | `projects/{project-name}/` |
-| Data science analyses | `data-science/` |
-| Engineering reference docs | `engineering/` |
 | Design reference docs | `design/` |
 | Customer feedback and intelligence | `customer-intelligence/` |
 | Strategic hypotheses and questions | `strategy/` |
 | Reference materials (PDFs, etc.) | `reference-docs/` |
+| Optional add-ons (engineering, data-science, leadership-forum, etc.) | `add-ons/` (move to root to enable) |
 
 ## File Routing Within Projects
 

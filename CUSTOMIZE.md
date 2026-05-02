@@ -52,11 +52,15 @@ The schema (confidence, evidence for/against, implications, last challenged) sta
 
 ## Customer Intelligence Customization
 
-The `customer-intelligence/` folder uses generic signal types. Customize:
+The `customer-intelligence/` folder is intentionally bare-bones — it's a home for voice-of-customer artifacts in whatever shape fits your product. To populate it:
 
-1. **Channels:** Update the channel registry in `customer-intelligence/README.md` with your actual feedback sources
-2. **Signal types:** The feedback scan skill classifies signals as bug/feature request/confusion/churn risk/positive. Add or rename categories for your domain.
-3. **Add a diagnosis workflow:** If your team does structured customer investigations, create a `diagnosis-workflow.md` in `customer-intelligence/` with your analysis dimensions, data sources, and output format.
+1. **Pick your sources.** Customer signal can come from support tickets, NPS surveys, sales calls, in-product feedback, social mentions, churn interviews, app store reviews, Slack escalations, user research — whatever your team uses.
+2. **Add a diagnosis workflow** (optional). If your team does structured investigations of individual customers/segments/issues, create `customer-intelligence/diagnosis-workflow.md` with your data sources, dimensions, and output format.
+3. **Enable scan skills** (optional). If you collect feedback in chat tools or record customer calls, two opt-in skills are available:
+   - `add-ons/skills/customer-feedback-scan` — sweep registered chat channels for product signal
+   - `add-ons/skills/call-transcript-scan` — speaker-aware analysis of recorded calls
+
+   Move either skill into `.claude/skills/` to enable. Each is tool-pluggable (works with Slack, Teams, Discord; Granola, Otter, Chorus; etc.) — see the skill's SKILL.md for configuration.
 
 ## Adding Custom Meeting Types
 
@@ -69,11 +73,14 @@ To add a new recurring meeting:
 
 ## Adding Post-Mortems / Retros
 
-Post-mortems live in `engineering/post-mortems/`. A template is provided at `engineering/post-mortems/_template.md`. To add a retro:
+Post-mortems live under `engineering/post-mortems/`, which ships as part of the engineering add-on (under `add-ons/engineering/`). To enable:
 
-1. Copy the template: `cp engineering/post-mortems/_template.md engineering/post-mortems/YYYY-MM-DD-incident-name.md`
-2. Fill in the sections
-3. Add "retro" as a meeting type in `team/rituals.md` if you want recurring retrospectives
+1. Move the engineering folder up: `mv add-ons/engineering .`
+2. Copy the post-mortem template for a specific incident: `cp engineering/post-mortems/_template.md engineering/post-mortems/YYYY-MM-DD-incident-name.md`
+3. Fill in the sections
+4. Add "retro" as a meeting type in `team/rituals.md` if you want recurring retrospectives
+
+If your team doesn't have engineers but does want incident retros (e.g., for a marketing/content team), copy just the `_template.md` to a folder of your choice — the structure is generic.
 
 ## Adding Custom Skills
 
@@ -85,22 +92,31 @@ Skills live in `.claude/skills/`. To create one:
 4. Reference any config files the skill needs (e.g., `config/morning-sync.md`)
 5. Follow the standards in `.claude/skills/STANDARDS.md`
 
-## Removing Optional Sections
+## Add-ons (opt-in patterns)
 
-Not every team needs every section. Here's what's safe to remove:
+The default install is intentionally minimal. Patterns that don't apply to every team — engineering, data science, leadership forum, customer-feedback-scan skills — ship under `add-ons/`. To enable any of them, move the directory or skill out of `add-ons/` to its target location:
+
+```bash
+mv add-ons/engineering .              # Enable engineering add-on (oncall, post-mortems)
+mv add-ons/data-science .             # Enable data-science folder + conventions
+mv add-ons/leadership-forum meetings/ # Enable leadership-forum prep workflow
+mv add-ons/skills/customer-feedback-scan .claude/skills/  # Enable Slack/Teams/Discord feedback sweep
+```
+
+See `add-ons/README.md` for the full list and what each one includes.
+
+## Removing Core Sections
+
+Most core sections are universal, but a few can be removed if not relevant:
 
 | Section | Safe to Remove? | Impact |
 |---------|----------------|--------|
 | `strategy/` | Not recommended | High-value thinking layer; remove only if team has a separate strategy tool |
-| `customer-intelligence/` | Yes | No other files depend on it; remove if customer feedback is tracked elsewhere |
-| `data-science/` | Yes | No other files depend on it |
-| `meetings/leadership-forum/` | Yes | Remove the corresponding row from the meeting table in CLAUDE.md |
+| `customer-intelligence/` | Yes | Remove if customer feedback is tracked elsewhere; no other files depend on it |
 | `reference-docs/` | Yes | No dependencies |
-| `engineering/post-mortems/` | Yes | Remove if incident retros live elsewhere |
 | `experiments.md` in project template | Yes | Remove from `_template/` if your team doesn't run A/B tests |
 | `analytics-spec.md` in project template | Yes | Remove if instrumentation is handled elsewhere |
 | `design/` | Not recommended | Projects reference designs.md; keep the contribution guide even if minimal |
-| `engineering/` | Not recommended | RFCs and codebase guide are high-value for agents |
 
 ## Optional Add-Ons
 
@@ -127,3 +143,16 @@ The repo ships with three layers of guardrails to keep the structure clean:
 1. **`.cursorrules`** — Rules for AI contributors using Cursor IDE. Edit the routing table if you add/remove top-level folders.
 2. **`.githooks/pre-commit`** — Blocks new files/dirs at the repo root outside the approved list. Update the `ALLOWED_ROOT_FILES` and `ALLOWED_ROOT_DIRS` variables. Enable with: `git config core.hooksPath .githooks`
 3. **`.github/workflows/repo-hygiene.yml`** — CI check that warns on unauthorized root files. Update the allowed lists to match your structure.
+
+### Prototyping Workflow
+If your team prototypes features against a live codebase (not standalone mockups), create `engineering/prototyping-workflow.md` with:
+- Steps: load project context -> load codebase -> find components -> implement with mock data -> iterate
+- Prerequisites (repos, tooling, dev server commands)
+- Rule: prototype changes are local-only. Learnings go back to the KB.
+
+### Operational Memory (Oncall Learnings)
+If your team does oncall or handles recurring investigation patterns, create a `.claude/memories/` folder:
+- `oncall-learnings/INDEX.md` -- index of known patterns
+- One `.md` per pattern: symptom, investigation steps, resolution
+- Skills read INDEX.md before investigating new issues, write new patterns after resolving them
+- This creates a self-improving investigation capability -- the agent gets smarter with each incident.

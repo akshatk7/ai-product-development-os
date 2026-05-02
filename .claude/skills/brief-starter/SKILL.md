@@ -14,7 +14,7 @@ Given a project topic or problem statement:
 1. Read `projects/INDEX.md` to find related projects by systems and domains.
 2. Read truths.md, decisions.md, CONTEXT.md from the top 3-5 related projects.
 3. Scan `reference-docs/` for relevant research or customer feedback.
-4. Check `data-science/INDEX.md` for relevant analyses.
+4. If `data-science/` exists at the repo root (the DS add-on is enabled), check `data-science/INDEX.md` for relevant analyses. If not, skip this step.
 5. Read `product/overview.md` for current product context.
 6. Read `product/review-taste.md` for leadership review patterns.
 7. Output a Brief Starter Kit:

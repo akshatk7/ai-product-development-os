@@ -11,11 +11,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-      - name: Check for unauthorized root files
+      - name: Load hygiene config
+        id: cfg
         run: |
-          ALLOWED_DIRS="\.claude|\.cursorrules|\.github|\.githooks|config|customer-intelligence|data-science|design|docs|engineering|meetings|product|projects|reference-docs|roadmap|strategy|team"
-          ALLOWED_FILES="CLAUDE\.md|README\.md|QUICKSTART\.md|CUSTOMIZE\.md|CHANGELOG\.md|\.cursorrules|\.gitignore|\.DS_Store"
+          if [ ! -f config/repo-hygiene.json ]; then
+            echo "::error::config/repo-hygiene.json missing"
+            exit 1
+          fi
+          jq empty config/repo-hygiene.json || { echo "::error::Invalid JSON in config"; exit 1; }
+          ALLOWED_ROOT=$(jq -r '.allowed_root_files | map(gsub("\\."; "\\\\.")) | join("|")' config/repo-hygiene.json)
+          ALLOWED_DIRS=$(jq -r '.allowed_root_dirs | map(gsub("\\."; "\\\\.")) | join("|")' config/repo-hygiene.json)
+          echo "allowed_root=$ALLOWED_ROOT" >> "$GITHUB_OUTPUT"
+          echo "allowed_dirs=$ALLOWED_DIRS" >> "$GITHUB_OUTPUT"
+
+      - name: Check for unexpected root files
+        run: |
+          ALLOWED_FILES="${{ steps.cfg.outputs.allowed_root }}"
+          ALLOWED_DIRS="${{ steps.cfg.outputs.allowed_dirs }}"
 
           warnings=""
 
@@ -35,8 +50,63 @@ jobs:
             echo "::error::Unexpected files/directories at repo root:"
             echo -e "$warnings"
             echo ""
-            echo "See .cursorrules for the routing table."
+            echo "Allowed roots are defined in config/repo-hygiene.json."
             exit 1
           else
             echo "Root structure is clean."
+          fi
+
+  context-md-journal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check CONTEXT.md files for dated section headers
+        run: |
+          REGEX=$(jq -r '.context_md_blocked_regex' config/repo-hygiene.json)
+          FAILED=""
+          while IFS= read -r f; do
+            if grep -Eq "$REGEX" "$f"; then
+              FAILED="$FAILED $f"
+            fi
+          done < <(find projects -name CONTEXT.md 2>/dev/null | grep -vE '_template|_example')
+          if [ -n "$FAILED" ]; then
+            echo "::error::CONTEXT.md files contain dated section headers (should be in updates.md):$FAILED"
+            exit 1
+          fi
+          echo "CONTEXT.md files clean."
+
+  claude-md-length:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify CLAUDE.md under line limit
+        run: |
+          MAX=$(jq -r '.claude_md_max_lines' config/repo-hygiene.json)
+          LINES=$(wc -l < CLAUDE.md | tr -d ' ')
+          if [ "$LINES" -gt "$MAX" ]; then
+            echo "::error::CLAUDE.md is $LINES lines (max $MAX). Move content to .claude/rules/ or section CLAUDE.md."
+            exit 1
+          fi
+          echo "CLAUDE.md is $LINES/$MAX lines."
+
+  readme-convention:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate project README headers
+        run: |
+          FAILED=""
+          for readme in $(find projects -maxdepth 3 -name README.md 2>/dev/null | grep -vE '_template|_example'); do
+            MISSING=""
+            grep -qE '^\- \*\*Phase:\*\* ' "$readme" || MISSING="$MISSING Phase"
+            grep -qE '^\- \*\*Status:\*\* ' "$readme" || MISSING="$MISSING Status"
+            grep -qE '^\- \*\*Last updated:\*\* [0-9]{4}-[0-9]{2}-[0-9]{2}' "$readme" || MISSING="$MISSING Last-updated"
+            grep -qE '^\- \*\*Team:\*\* ' "$readme" || MISSING="$MISSING Team"
+            if [ -n "$MISSING" ]; then
+              FAILED="$FAILED\n  $readme missing:$MISSING"
+            fi
+          done
+          if [ -n "$FAILED" ]; then
+            echo -e "::warning::Project README files missing required fields:$FAILED"
+            # Warning only — existing READMEs may drift during transition. Promote to error once repo is clean.
           fi

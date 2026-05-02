@@ -1,0 +1,144 @@
+{
+  "_description": "Single source of truth for repo-hygiene rules. Read by pre-commit hook, CI workflows, and skills (morning-sync, weekly prep). Do not duplicate values elsewhere — if you need a new rule, add it here.",
+  "_last_updated": "2026-04-23",
+
+  "allowed_root_files": [
+    "CLAUDE.md",
+    "README.md",
+    "QUICKSTART.md",
+    "CUSTOMIZE.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    ".cursorrules",
+    ".gitignore",
+    ".gitattributes",
+    "LICENSE"
+  ],
+
+  "allowed_root_dirs": [
+    "projects",
+    "meetings",
+    "roadmap",
+    "team",
+    "product",
+    "design",
+    "customer-intelligence",
+    "reference-docs",
+    "strategy",
+    "docs",
+    "config",
+    "add-ons",
+    "data-science",
+    "engineering",
+    "plugins",
+    ".claude",
+    ".cursor",
+    ".github",
+    ".githooks"
+  ],
+  "_allowed_root_dirs_note": "Core directories listed first. 'data-science' and 'engineering' are kept allowed at root for users who enable those add-ons (move from add-ons/X to root X). Default install ships them under add-ons/.",
+
+  "project_categories": {
+    "_description": "Customize this for your team. Each category = a folder under projects/ + a section header in weekly output. The weekly skill lints that every project listed under a section's header belongs to that category's path. Remove categories that don't apply; add your own.",
+    "_example": {
+      "ml": {
+        "path": "projects/ml/",
+        "output_section": "ML / Algorithmic",
+        "intent": "ML/algorithm projects — experiments, model rollouts"
+      },
+      "product": {
+        "path": "projects/product/",
+        "output_section": "Product / UX",
+        "intent": "Portal/UX projects, customer-facing work"
+      },
+      "cross-functional": {
+        "path": "projects/cross-functional/",
+        "output_section": "Cross-functional",
+        "intent": "Partnerships with other teams"
+      },
+      "future": {
+        "path": "projects/future/",
+        "output_section": "Future / Exploratory",
+        "intent": "Not-yet-staffed or very early exploration"
+      }
+    }
+  },
+
+  "freshness_sla_days": {
+    "_description": "Max days a project README 'Last updated' can lag before morning-sync flags it. Matched by phase value (case-insensitive prefix). Values are soft limits — flag as warning, not error.",
+    "Live": 7,
+    "Coding": 14,
+    "RFCs": 14,
+    "Feasibility": 21,
+    "Designs": 21,
+    "Product Brief": 30,
+    "Exploratory": 60,
+    "Proposal": 60,
+    "Complete": 180
+  },
+
+  "phase_required_files": {
+    "_description": "When a project's phase is set to X, these files must exist. Pre-commit checks on README phase change; morning-sync flags drift. The special token `_rfc_any` means rfc-frontend.md OR rfc-backend.md.",
+    "Designs": ["product-brief.md"],
+    "Feasibility": ["product-brief.md"],
+    "RFCs": ["product-brief.md", "_rfc_any"],
+    "Coding": ["updates.md", "_rfc_any"],
+    "Live": ["updates.md", "decisions.md"]
+  },
+
+  "strategy_cadence_days": {
+    "_description": "How often strategy files should show activity. Used by morning-sync to surface hygiene items.",
+    "beliefs_challenged_within": 60,
+    "competitive_updated_within": 60,
+    "open_questions_reviewed_within": 30
+  },
+
+  "claude_md_max_lines": 150,
+
+  "context_md_blocked_regex": "^## (20[0-9]{2}|January|February|March|April|May|June|July|August|September|October|November|December)",
+
+  "skill_required_files": ["SKILL.md", "gotchas.md", "runs.log"],
+
+  "readme_required_fields": {
+    "_description": "Every project README.md (except _template/ and _example/) must contain a Status block with these fields. Enforced by pre-commit.",
+    "fields": [
+      "- \\*\\*Phase:\\*\\* ",
+      "- \\*\\*Status:\\*\\* ",
+      "- \\*\\*Last updated:\\*\\* [0-9]{4}-[0-9]{2}-[0-9]{2}",
+      "- \\*\\*Team:\\*\\* "
+    ]
+  },
+
+  "channel_roles": {
+    "_description": "Team customizes this in config/morning-sync.md. Role values: 'pm' (always surface), 'eng' (only product-keyword matches), 'ds' (only product-relevant), 'monitor' (flag as context only).",
+    "default": "pm"
+  },
+
+  "product_keywords_for_eng_ds_filter": {
+    "_description": "Customize for your product. Used by morning-sync to decide whether an eng-role or ds-role channel message is worth surfacing to the PM.",
+    "keywords": [
+      "customer",
+      "user",
+      "timeline",
+      "launch",
+      "ship",
+      "PRD",
+      "brief",
+      "design review",
+      "rollout",
+      "GA",
+      "pilot",
+      "experiment result",
+      "churn",
+      "adoption",
+      "retention"
+    ]
+  },
+
+  "experiment_decision_keywords": {
+    "_description": "Classify experiment status language in meeting transcripts. Morning-sync must not write 'decided' or 'winner' unless an explicit confirmed-tier keyword is present.",
+    "confirmed": ["promoting to winner", "confirmed winner", "GTM'd", "launched to 100", "approved", "decided to ship", "finalized", "ramping to 100"],
+    "trending": ["strong early signal", "looking promising", "interesting results", "seeing potential", "preliminary"],
+    "running": ["still running", "no new data", "continuing to ramp"]
+  }
+}

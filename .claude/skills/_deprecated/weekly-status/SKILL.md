@@ -1,7 +1,15 @@
 ---
 name: weekly-status
-description: Pull a cross-referenced weekly status snapshot from all project sources
+description: "[DEPRECATED 2026-04-23] Use meetings/weekly/CLAUDE.md instead — its Step 5.0 covers the same mismatch-detection logic. This skill is kept for reference only."
 alwaysApply: false
+---
+
+**DEPRECATED — Use `meetings/weekly/CLAUDE.md` (the Monday weekly prep skill) instead.**
+
+The mismatch-detection logic that was this skill's unique value is now Step 5.0 of the weekly prep workflow. Invoking this skill separately creates redundant work and split gotchas. This folder is in `.claude/skills/_deprecated/` per STANDARDS.md; delete after one month of parallel availability.
+
+Original instructions follow for reference only — do not run them.
+
 ---
 
 # Weekly Status

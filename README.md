@@ -14,7 +14,7 @@ A plug-and-play operating system for product development teams. Clone this repo,
 >
 > Then create your own repo on GitHub and push:
 > ```bash
-> git remote add origin https://github.com/your-org/<your-team-repo>.git
+> git remote add origin https://github.com/<your-org>/<your-team-repo>.git
 > git add -A && git commit -m "Initialize from AI Product Development OS template"
 > git push -u origin main
 > ```
@@ -184,10 +184,10 @@ See `CLAUDE.md` for the full system overview once you're set up.
 
 ---
 
-**If you're using this, [star the repo](https://github.com/akshatk7/ai-product-development-os)** — it helps us track adoption and prioritize improvements.
+**If you're using this, [star the repo](https://github.com/akshatk7/ai-product-development-os)** — it helps track adoption and prioritize improvements.
 
 ---
 
 ## Credits
 
-Created and maintained by **[Akshat Khandelwal](https://github.com/akshatk7)** .
+Created and maintained by **[Akshat Khandelwal](https://github.com/akshatk7)**.

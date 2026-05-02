@@ -1,0 +1,43 @@
+name: Link Check
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Weekly sweep Mondays 13:00 UTC to catch rot from external links
+    - cron: '0 13 * * 1'
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run link checker
+        uses: lycheeverse/lychee-action@v1
+        with:
+          # Only flag internal (relative) broken links as errors.
+          # External auth-gated services (Google Docs, Figma, Slack, etc.) typically 403 without auth.
+          # Customize this exclude list for your team's tools.
+          args: >
+            --no-progress
+            --exclude-path '.git'
+            --exclude-path 'reference-docs'
+            --exclude 'docs.google.com'
+            --exclude 'drive.google.com'
+            --exclude 'figma.com'
+            --exclude 'slack.com'
+            './**/*.md'
+          fail: true
+          output: ./lychee-report.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lychee-report
+          path: ./lychee-report.md
