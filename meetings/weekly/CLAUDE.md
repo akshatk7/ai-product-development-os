@@ -5,7 +5,7 @@
 **Purpose:** Automate preparation of the team weekly meeting doc every Monday morning.
 **Trigger:** "write top of mind for [date]"
 
-> This is the canonical weekly prep skill. If your repo has a `.claude/skills/weekly-status/` skill, prefer this one — the mismatch-detection logic is folded into Step 5.0 below.
+> This is the canonical weekly prep workflow. The older `weekly-status` skill was deprecated in v5.0 (now under `.claude/skills/_deprecated/weekly-status/`); its mismatch-detection logic is folded into Step 5.0 below.
 
 ---
 
