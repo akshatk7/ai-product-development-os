@@ -25,6 +25,8 @@ jobs:
             --no-progress
             --exclude-path '.git'
             --exclude-path 'reference-docs'
+            --exclude-path '_template'
+            --exclude-path '_example'
             --exclude 'docs.google.com'
             --exclude 'drive.google.com'
             --exclude 'figma.com'
