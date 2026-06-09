@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run link checker
-        uses: lycheeverse/lychee-action@v1
+        uses: lycheeverse/lychee-action@v2
         with:
           # Only flag internal (relative) broken links as errors.
           # External auth-gated services (Google Docs, Figma, Slack, etc.) typically 403 without auth.
